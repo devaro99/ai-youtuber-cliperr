@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b14">
+  <title>AI Podcast Clip Studio</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#080b14;color:#f4f5ff;font-family:system-ui,sans-serif}
+    main{width:min(100% - 28px,680px);margin:auto;padding:28px 0 48px}
+    .brand{color:#a99bff;font-weight:800;letter-spacing:2px}
+    h1{font-size:clamp(36px,9vw,56px);line-height:1.1}
+    h1 span{color:#a99bff}
+    .muted{color:#9ba8bd;font-size:13px}
+    .panel{background:#111827;border:1px solid #293349;border-radius:18px;padding:20px;margin:18px 0}
+    label{display:block;margin:16px 0 8px;font-weight:650}
+    input,select{width:100%;padding:13px;color:white;background:#080b14;border:1px solid #35415b;border-radius:10px;font:inherit}
+    button,.share{display:block;width:100%;padding:14px;border:0;border-radius:10px;background:#8b7cff;color:white;font-weight:750;text-align:center;text-decoration:none;cursor:pointer;margin-top:14px}
+    button:disabled{opacity:.5}
+    .player{width:100%;aspect-ratio:9/16;max-width:340px;margin:16px auto;background:#000;border-radius:14px;overflow:hidden}
+    .player iframe{width:100%;height:100%;border:0}
+    .hidden{display:none}
+    #message{overflow-wrap:anywhere}
+  </style>
+</head>
+<body>
+<main>
+  <div class="brand">AI CLIP STUDIO</div>
+  <h1>Podcast jadi <span>clip.</span></h1>
+  <p class="muted">Tempel link YouTube dan siapkan segmen podcast pendek.</p>
+
+  <section class="panel">
+    <label for="url">Link YouTube</label>
+    <input id="url" placeholder="https://youtube.com/watch?v=...">
+
+    <label for="duration">Durasi clip</label>
+    <select id="duration">
+      <option value="30">30 detik</option>
+      <option value="45" selected>45 detik</option>
+      <option value="60">60 detik</option>
+    </select>
+
+    <label for="start">Mulai dari detik ke-</label>
+    <input id="start" type="number" min="0" value="0">
+
+    <button id="previewBtn">Tampilkan preview</button>
+    <p id="message" class="muted" role="status">Siap menerima link YouTube.</p>
+  </section>
+
+  <section id="result" class="panel hidden">
+    <h2>Preview video</h2>
+    <div id="player" class="player"></div>
+    <p class="muted">Ini adalah pemutar YouTube dalam bingkai vertikal, bukan hasil crop video baru.</p>
+    <a id="share" class="share" target="_blank" rel="noopener noreferrer">Bagikan segmen</a>
+  </section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+
+function getVideoId(raw){
+  try{
+    const u=new URL(raw);
+    let id="";
+    if(["youtu.be","www.youtu.be"].includes(u.hostname)){
+      id=u.pathname.split("/").filter(Boolean)[0]||"";
+    }else if(["youtube.com","www.youtube.com","m.youtube.com"].includes(u.hostname)){
+      if(u.pathname==="/watch") id=u.searchParams.get("v")||"";
+      else if(/^\/(embed|shorts|live)\//.test(u.pathname)) id=u.pathname.split("/")[2]||"";
+    }
+    return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null;
+  }catch{return null}
+}
+
+$("previewBtn").addEventListener("click",()=>{
+  const id=getVideoId($("url").value.trim());
+  const start=Number($("start").value);
+  const duration=Number($("duration").value);
+
+  if(!id){
+    $("message").textContent="Link YouTube tidak valid. Periksa kembali.";
+    $("result").classList.add("hidden");
+    return;
+  }
+  if(!Number.isSafeInteger(start)||start<0){
+    $("message").textContent="Waktu mulai harus angka positif.";
+    return;
+  }
+
+  const embed=new URL("https://www.youtube-nocookie.com/embed/"+id);
+  embed.searchParams.set("start",String(start));
+  embed.searchParams.set("end",String(start+duration));
+  embed.searchParams.set("playsinline","1");
+
+  const iframe=document.createElement("iframe");
+  iframe.src=embed.toString();
+  iframe.title="Preview video YouTube";
+  iframe.allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share";
+  iframe.allowFullscreen=true;
+  $("player").replaceChildren(iframe);
+
+  const share=new URL("https://www.youtube.com/watch");
+  share.searchParams.set("v",id);
+  share.searchParams.set("t",String(start));
+  $("share").href=share.toString();
+
+  $("result").classList.remove("hidden");
+  $("message").textContent="Preview segmen siap ditampilkan.";
+});
+</script>
+</body>
+</html>
