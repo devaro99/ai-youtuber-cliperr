@@ -1,0 +1,8 @@
+{
+  "name": "ai-youtube-clipper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend and Vercel serverless API starter for an authorized video clipping provider",
+  "engines": { "node": ">=18" },
+  "scripts": { "start": "vercel dev" }
+}
